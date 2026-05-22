@@ -357,7 +357,7 @@ class C64Screen {
 
   pset(x, y, color) {
     x = Math.round(x); y = Math.round(y);
-    if (x < 0 || x > 319 || y < 0 || y > 199) return;
+    if (x < 0 || x >= 320 || y < 0 || y >= 200) return;
     const i = y * 320 + x;
     this.pixels[i]     = 1;
     this.pixelColor[i] = (color !== undefined ? color : this.fgColor) & 15;
@@ -365,7 +365,7 @@ class C64Screen {
 
   preset(x, y) {
     x = Math.round(x); y = Math.round(y);
-    if (x < 0 || x > 319 || y < 0 || y > 199) return;
+    if (x < 0 || x >= 320 || y < 0 || y >= 200) return;
     this.pixels[y * 320 + x] = 0;
   }
 

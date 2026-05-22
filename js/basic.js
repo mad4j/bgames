@@ -208,7 +208,8 @@ class BasicInterpreter {
     // ── GOSUB ─────────────────────────────────────────────────────────────
     if (u.startsWith('GOSUB ') || u.startsWith('GO SUB ')) {
       const target = parseInt(s.replace(/^GO\s*SUB\s+/i, ''));
-      this._gosubStk.push(this._idx + 1);
+      // Store the line number to return to (line after GOSUB)
+      this._gosubStk.push(this._lines[this._idx + 1]);
       this._nextLine = target;
       return;
     }
@@ -216,9 +217,7 @@ class BasicInterpreter {
     // ── RETURN ────────────────────────────────────────────────────────────
     if (u === 'RETURN') {
       if (!this._gosubStk.length) throw new Error('RETURN WITHOUT GOSUB');
-      const retIdx = this._gosubStk.pop();
-      // Jump to the stored idx (which is already the next sequential line after GOSUB)
-      this._nextLine = this._lines[retIdx];
+      this._nextLine = this._gosubStk.pop();
       return;
     }
 
@@ -512,7 +511,7 @@ class BasicInterpreter {
     const step    = m[4] ? this._evalNum(m[4]) : 1;
 
     this._vars.set(varName, start);
-    this._forStk.push({ varName, limit, step, forIdx: this._idx });
+    this._forStk.push({ varName, limit, step, bodyLine: this._lines[this._idx + 1] });
   }
 
   _stmtNext(s) {
@@ -535,7 +534,7 @@ class BasicInterpreter {
 
     if (!done) {
       // Jump to body (line after FOR)
-      this._nextLine = this._lines[entry.forIdx + 1];
+      this._nextLine = entry.bodyLine;
     } else {
       this._forStk.splice(entryPos, 1);
     }
@@ -830,7 +829,7 @@ class ExprParser {
       case 'MID$': {
         const s2 = gs(0), st = Math.max(1, g(1)) - 1;
         const ln = args[2] !== undefined ? g(2) : undefined;
-        return ln !== undefined ? s2.substr(st, ln) : s2.slice(st);
+        return ln !== undefined ? s2.substring(st, st + ln) : s2.slice(st);
       }
       case 'LEFT$':  return gs(0).slice(0, g(1));
       case 'RIGHT$': return gs(0).slice(-Math.max(1, g(1)));
