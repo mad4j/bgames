@@ -208,8 +208,9 @@ class BasicInterpreter {
     // ── GOSUB ─────────────────────────────────────────────────────────────
     if (u.startsWith('GOSUB ') || u.startsWith('GO SUB ')) {
       const target = parseInt(s.replace(/^GO\s*SUB\s+/i, ''));
-      // Store the line number to return to (line after GOSUB)
-      this._gosubStk.push(this._lines[this._idx + 1]);
+      // Store the line number to return to (line after GOSUB), or null if last line
+      const retLine = this._idx + 1 < this._lines.length ? this._lines[this._idx + 1] : null;
+      this._gosubStk.push(retLine);
       this._nextLine = target;
       return;
     }
@@ -217,7 +218,12 @@ class BasicInterpreter {
     // ── RETURN ────────────────────────────────────────────────────────────
     if (u === 'RETURN') {
       if (!this._gosubStk.length) throw new Error('RETURN WITHOUT GOSUB');
-      this._nextLine = this._gosubStk.pop();
+      const retLine = this._gosubStk.pop();
+      if (retLine === null) {
+        // GOSUB was the last line; RETURN ends execution
+        throw { _basic: 'END' };
+      }
+      this._nextLine = retLine;
       return;
     }
 
@@ -511,7 +517,9 @@ class BasicInterpreter {
     const step    = m[4] ? this._evalNum(m[4]) : 1;
 
     this._vars.set(varName, start);
-    this._forStk.push({ varName, limit, step, bodyLine: this._lines[this._idx + 1] });
+    // Store the body line number (first line after FOR); null if FOR is last line
+    const bodyLine = this._idx + 1 < this._lines.length ? this._lines[this._idx + 1] : null;
+    this._forStk.push({ varName, limit, step, bodyLine });
   }
 
   _stmtNext(s) {
@@ -533,7 +541,8 @@ class BasicInterpreter {
     const done = entry.step >= 0 ? val > entry.limit : val < entry.limit;
 
     if (!done) {
-      // Jump to body (line after FOR)
+      // Jump to body (line after FOR); if bodyLine is null the loop body is missing
+      if (entry.bodyLine === null) throw new Error('FOR WITHOUT BODY');
       this._nextLine = entry.bodyLine;
     } else {
       this._forStk.splice(entryPos, 1);
