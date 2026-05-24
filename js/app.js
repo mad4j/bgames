@@ -180,8 +180,8 @@ class BGamesApp {
   _seedLibrary() {
     // Pre-populate with sample programs only if the library is still empty
     if (this._getLibrary().length === 0) {
-      const seeded = new Date().toISOString();
-      const entries = SAMPLE_PROGRAMS.map(s => ({ name: s.name, code: s.code, date: seeded }));
+      const timestamp = new Date().toISOString();
+      const entries = SAMPLE_PROGRAMS.map(s => ({ name: s.name, code: s.code, date: timestamp }));
       localStorage.setItem('bgames_library', JSON.stringify(entries));
     }
   }

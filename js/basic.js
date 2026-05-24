@@ -670,7 +670,8 @@ class BasicInterpreter {
       i++;
     }
     if (depth !== 0) throw new Error('WHILE WITHOUT WEND');
-    // Skip to the line after the matching WEND
+    // Jump to the line after the matching WEND.
+    // If WEND is the last line, signal end-of-program the same way 'END' does.
     if (i + 1 < this._lines.length) {
       this._nextLine = this._lines[i + 1];
     } else {
