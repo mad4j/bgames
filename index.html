@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#13131f">
+  <meta name="description" content="BGames — BASIC game studio with a Commodore 64-style screen emulator">
+  <title>BGames — BASIC Game Studio</title>
+
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" type="image/svg+xml" href="icons/icon.svg">
+  <link rel="apple-touch-icon" href="icons/icon-192.png">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+  <!-- ═══════════ TOOLBAR ═══════════ -->
+  <header id="toolbar" role="banner">
+    <div class="tb-brand" aria-label="BGames">
+      <svg width="22" height="22" viewBox="0 0 22 22" fill="none" aria-hidden="true">
+        <rect x="1" y="4" width="20" height="14" rx="2" stroke="#00d4ff" stroke-width="1.5"/>
+        <circle cx="7"  cy="11" r="2" fill="#00d4ff"/>
+        <circle cx="15" cy="11" r="2" fill="#00d4ff"/>
+        <rect x="9" y="9" width="4" height="4" rx="1" fill="#00d4ff" opacity=".5"/>
+      </svg>
+      <span>BGames</span>
+    </div>
+
+    <div class="tb-sep" aria-hidden="true"></div>
+
+    <button id="btn-new"  class="btn" title="New game (discard current)">New</button>
+    <button id="btn-load" class="btn" title="Load a saved game">Load</button>
+    <button id="btn-save" class="btn" title="Save current game">Save</button>
+
+    <div class="tb-sep" aria-hidden="true"></div>
+
+    <button id="btn-run"  class="btn btn-primary" title="Run the program (F5)">▶ Run</button>
+    <button id="btn-stop" class="btn btn-danger"  title="Stop execution (Esc)" disabled>■ Stop</button>
+
+    <div class="tb-spacer"></div>
+
+    <span id="tb-filename" class="tb-filename" title="Current file">untitled.bas</span>
+  </header>
+
+  <!-- ═══════════ TABS ═══════════ -->
+  <nav id="tabs" role="tablist" aria-label="Application tabs">
+    <button class="tab-btn active" role="tab" aria-selected="true"
+            aria-controls="tab-play" data-tab="play">
+      ▶ Play
+    </button>
+    <button class="tab-btn" role="tab" aria-selected="false"
+            aria-controls="tab-code" data-tab="code">
+      ⌨ Code
+    </button>
+  </nav>
+
+  <!-- ═══════════ MAIN ═══════════ -->
+  <main id="main">
+
+    <!-- ── Play tab ── -->
+    <section id="tab-play" class="tab-panel active" role="tabpanel"
+             aria-label="Play" tabindex="0">
+      <div class="screen-wrap">
+        <canvas id="c64-canvas" aria-label="C64-style screen" tabindex="0"></canvas>
+      </div>
+    </section>
+
+    <!-- ── Code tab ── -->
+    <section id="tab-code" class="tab-panel" role="tabpanel"
+             aria-label="Code editor">
+      <div class="editor-bar">
+        <span>BASIC Editor</span>
+        <span class="editor-hints">
+          PRINT · INPUT · IF/THEN/ELSE · GOTO · GOSUB · FOR/NEXT · PSET · LINE · CIRCLE · SOUND
+        </span>
+      </div>
+      <textarea id="basic-editor"
+                spellcheck="false"
+                autocomplete="off"
+                autocorrect="off"
+                autocapitalize="off"
+                aria-label="BASIC source code"
+                placeholder="10 REM  Type your BASIC program here..."></textarea>
+      <div id="editor-status" class="editor-status" aria-live="polite">
+        <span id="sb-pos">Ln 1, Col 1</span>
+        <span class="sb-sep" aria-hidden="true">|</span>
+        <span id="sb-lines">1 line</span>
+        <span class="sb-spacer"></span>
+        <span class="sb-hint">F5 Run · Esc Stop</span>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ═══════════ MODAL ═══════════ -->
+  <div id="modal-overlay" class="hidden" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+    <div class="modal-box">
+      <div class="modal-head">
+        <h2 id="modal-title"></h2>
+        <button class="modal-close" aria-label="Close dialog">×</button>
+      </div>
+      <div class="modal-body" id="modal-body"></div>
+      <div class="modal-foot" id="modal-foot"></div>
+    </div>
+  </div>
+
+  <!-- Hidden file input for loading .bas files -->
+  <input type="file" id="file-input" accept=".bas,.txt,.BAS" style="display:none"
+         aria-hidden="true" tabindex="-1">
+
+  <!-- ═══════════ SCRIPTS ═══════════ -->
+  <script src="js/screen.js"></script>
+  <script src="js/basic.js"></script>
+  <script src="js/app.js"></script>
+
+</body>
+</html>

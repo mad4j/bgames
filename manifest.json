@@ -1,0 +1,38 @@
+{
+  "name": "BGames — BASIC Game Studio",
+  "short_name": "BGames",
+  "description": "Write and run BASIC games on a Commodore 64-style screen",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0a0a14",
+  "theme_color": "#13131f",
+  "orientation": "any",
+  "icons": [
+    {
+      "src": "icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icons/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    }
+  ],
+  "categories": ["games", "utilities", "education"],
+  "screenshots": [],
+  "shortcuts": [
+    {
+      "name": "New Game",
+      "url": "/?new=1",
+      "description": "Start a new BASIC program"
+    }
+  ]
+}

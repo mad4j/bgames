@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <rect width="512" height="512" fill="#13131f" rx="80"/>
+  <rect x="56" y="130" width="400" height="252" rx="20" fill="#1b1b2e" stroke="#00d4ff" stroke-width="12"/>
+  <rect x="76"  y="150" width="360" height="212" rx="10" fill="#50459B"/>
+  <!-- Screen glare -->
+  <rect x="76" y="150" width="360" height="212" rx="10" fill="url(#glare)" opacity=".15"/>
+  <!-- Joystick left -->
+  <circle cx="140" cy="390" r="30" fill="#252540" stroke="#00d4ff" stroke-width="6"/>
+  <circle cx="140" cy="390" r="12" fill="#00d4ff"/>
+  <!-- Joystick right -->
+  <circle cx="372" cy="390" r="30" fill="#252540" stroke="#00d4ff" stroke-width="6"/>
+  <rect x="358" y="378" width="28" height="24" rx="4" fill="#00d4ff" opacity=".6"/>
+  <!-- Screen content suggestion -->
+  <rect x="110" y="185" width="180" height="12" rx="4" fill="#C9D487" opacity=".8"/>
+  <rect x="110" y="208" width="130" height="10" rx="4" fill="#9AE29B" opacity=".7"/>
+  <rect x="110" y="228" width="200" height="10" rx="4" fill="#9AE29B" opacity=".5"/>
+  <!-- Cursor blink -->
+  <rect x="110" y="250" width="10" height="14" rx="2" fill="#FFFFFF" opacity=".9"/>
+  <defs>
+    <linearGradient id="glare" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#fff"/>
+      <stop offset="1" stop-color="#fff" stop-opacity="0"/>
+    </linearGradient>
+  </defs>
+</svg>
