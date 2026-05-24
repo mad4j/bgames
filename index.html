@@ -35,7 +35,7 @@
     <div class="tb-sep" aria-hidden="true"></div>
 
     <button id="btn-run"  class="btn btn-primary" title="Run the program (F5)">▶ Run</button>
-    <button id="btn-stop" class="btn btn-danger"  title="Stop execution"  disabled>■ Stop</button>
+    <button id="btn-stop" class="btn btn-danger"  title="Stop execution (Esc)" disabled>■ Stop</button>
 
     <div class="tb-spacer"></div>
 
@@ -81,6 +81,13 @@
                 autocapitalize="off"
                 aria-label="BASIC source code"
                 placeholder="10 REM  Type your BASIC program here..."></textarea>
+      <div id="editor-status" class="editor-status" aria-live="polite">
+        <span id="sb-pos">Ln 1, Col 1</span>
+        <span class="sb-sep" aria-hidden="true">|</span>
+        <span id="sb-lines">1 line</span>
+        <span class="sb-spacer"></span>
+        <span class="sb-hint">F5 Run · Esc Stop</span>
+      </div>
     </section>
 
   </main>

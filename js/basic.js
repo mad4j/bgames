@@ -2,14 +2,15 @@
  * BasicInterpreter — BASIC interpreter for the C64-style BGames platform.
  *
  * Supported statements:
- *   REM, PRINT/?, INPUT, LET, IF..THEN..ELSE, GOTO, GOSUB, RETURN,
- *   FOR..TO..STEP, NEXT, END, STOP, CLS, COLOR, LOCATE, PSET, LINE,
- *   CIRCLE, RECT, GRAPHICS, SOUND, BEEP, WAIT, DIM, READ, DATA, RESTORE
+ *   REM, PRINT/?, INPUT, LINE INPUT, LET, IF..THEN..ELSE, GOTO, GOSUB, RETURN,
+ *   ON..GOTO, ON..GOSUB, FOR..TO..STEP, NEXT, WHILE..WEND,
+ *   END, STOP, CLS, COLOR, LOCATE, PSET, LINE, CIRCLE, RECT,
+ *   GRAPHICS, SOUND, BEEP, WAIT, DIM, READ, DATA, RESTORE
  *
  * Supported functions:
  *   INT, ABS, SGN, SQR, RND, SIN, COS, TAN, ATN, EXP, LOG, LOG10,
  *   CHR$, STR$, VAL, LEN, ASC, MID$, LEFT$, RIGHT$, INSTR, INKEY$,
- *   TIME (returns seconds since epoch)
+ *   SPACE$, STRING$, MAX, MIN, TIME/TIMER
  */
 
 'use strict';
@@ -71,8 +72,9 @@ class BasicInterpreter {
     // Runtime state
     this._vars     = new Map();  // name(lowercase) -> value
     this._arrays   = new Map();  // name -> flat object { key: value }
-    this._gosubStk = [];         // array of return-to indices
-    this._forStk   = [];         // array of { varName, limit, step, nextIdx }
+    this._gosubStk = [];         // array of return-to line numbers
+    this._forStk   = [];         // array of { varName, limit, step, bodyLine }
+    this._whileStk = [];         // array of { condExpr, bodyLine }
     this._dataPtr  = 0;
     this._idx      = 0;          // current index into this._lines
 
@@ -182,6 +184,21 @@ class BasicInterpreter {
       await this._stmtPrint(s); return;
     }
 
+    // ── LINE INPUT (reads whole line, no comma splitting) ─────────────────
+    if (u.startsWith('LINE INPUT')) {
+      let rest = s.replace(/^LINE\s+INPUT\s+/i, '');
+      let prompt = '';
+      const pm = rest.match(/^"([^"]*)"[;,]\s*([\s\S]+)/);
+      if (pm) { prompt = pm[1]; rest = pm[2]; }
+      const varName = rest.trim().toLowerCase();
+      const val = await new Promise(resolve => {
+        this.screen.readLine(prompt, resolve);
+      });
+      if (this._stopReq || !this._running) return;
+      this._setVar(varName, val);
+      return;
+    }
+
     // ── INPUT ─────────────────────────────────────────────────────────────
     if (u.startsWith('INPUT')) { await this._stmtInput(s); return; }
 
@@ -197,6 +214,26 @@ class BasicInterpreter {
     // ── IF..THEN..ELSE ────────────────────────────────────────────────────
     if (u.startsWith('IF ') || u.startsWith('IF(')) {
       await this._stmtIf(lineNum, s); return;
+    }
+
+    // ── ON..GOTO / ON..GOSUB ──────────────────────────────────────────────
+    if (u.startsWith('ON ')) {
+      const mGoto  = s.match(/^ON\s+([\s\S]+?)\s+GO\s*TO\s+([\d,\s]+)$/i);
+      const mGosub = s.match(/^ON\s+([\s\S]+?)\s+GO\s*SUB\s+([\d,\s]+)$/i);
+      const m = mGoto || mGosub;
+      if (m) {
+        const val     = Math.round(this._evalNum(m[1]));
+        const targets = m[2].split(',').map(n => parseInt(n.trim())).filter(n => !isNaN(n));
+        if (val >= 1 && val <= targets.length) {
+          const target = targets[val - 1];
+          if (mGosub) {
+            const retLine = this._idx + 1 < this._lines.length ? this._lines[this._idx + 1] : null;
+            this._gosubStk.push(retLine);
+          }
+          this._nextLine = target;
+        }
+        return;
+      }
     }
 
     // ── GOTO ──────────────────────────────────────────────────────────────
@@ -232,6 +269,33 @@ class BasicInterpreter {
 
     // ── NEXT ─────────────────────────────────────────────────────────────
     if (u.startsWith('NEXT')) { this._stmtNext(s); return; }
+
+    // ── WHILE ────────────────────────────────────────────────────────────
+    if (u.startsWith('WHILE') && (u.length === 5 || u[5] === ' ' || u[5] === '(')) {
+      const condExpr = s.slice(5).trim();
+      const ok = condExpr ? this._evalBool(condExpr) : false;
+      if (ok) {
+        const bodyLine = this._idx + 1 < this._lines.length ? this._lines[this._idx + 1] : null;
+        this._whileStk.push({ condExpr, bodyLine });
+      } else {
+        this._skipToWend();
+      }
+      return;
+    }
+
+    // ── WEND ─────────────────────────────────────────────────────────────
+    if (u === 'WEND') {
+      if (!this._whileStk.length) throw new Error('WEND WITHOUT WHILE');
+      const entry = this._whileStk[this._whileStk.length - 1];
+      const ok = this._evalBool(entry.condExpr);
+      if (ok) {
+        if (entry.bodyLine === null) throw new Error('WHILE WITHOUT BODY');
+        this._nextLine = entry.bodyLine;
+      } else {
+        this._whileStk.pop();
+      }
+      return;
+    }
 
     // ── DIM ───────────────────────────────────────────────────────────────
     if (u.startsWith('DIM ')) { this._stmtDim(s.slice(4).trim()); return; }
@@ -340,10 +404,15 @@ class BasicInterpreter {
     // ── BEEP ─────────────────────────────────────────────────────────────
     if (u === 'BEEP') { this.screen.beep(); return; }
 
-    // ── WAIT ─────────────────────────────────────────────────────────────
-    if (u.startsWith('WAIT ')) {
-      const sec = this._evalNum(s.slice(5).trim());
-      await new Promise(r => setTimeout(r, sec * 1000));
+    // ── WAIT / PAUSE ─────────────────────────────────────────────────────
+    if (u.startsWith('WAIT ') || u.startsWith('PAUSE ')) {
+      const keyword = u.startsWith('WAIT ') ? 'WAIT ' : 'PAUSE ';
+      const ms  = this._evalNum(s.slice(keyword.length).trim()) * 1000;
+      const end = Date.now() + ms;
+      while (Date.now() < end && !this._stopReq) {
+        const remaining = end - Date.now();
+        await new Promise(r => setTimeout(r, Math.min(50, Math.max(0, remaining))));
+      }
       return;
     }
 
@@ -587,6 +656,26 @@ class BasicInterpreter {
     const m = s.match(/^\(([^,)]+),([^)]+)\)-\(([^,)]+),([^)]+)\)\s*(?:,\s*([\s\S]+))?$/);
     if (!m) return null;
     return { x1: m[1], y1: m[2], x2: m[3], y2: m[4], extra: m[5] || null };
+  }
+
+  // ── Helper: skip forward to matching WEND ────────────────────────────────
+
+  _skipToWend() {
+    let depth = 1;
+    let i = this._idx + 1;
+    while (i < this._lines.length && depth > 0) {
+      const u = (this._prog.get(this._lines[i]) || '').trim().toUpperCase();
+      if (/^WHILE[\s(]/.test(u) || u === 'WHILE') depth++;
+      else if (/^WEND\b/.test(u)) { depth--; if (depth === 0) break; }
+      i++;
+    }
+    if (depth !== 0) throw new Error('WHILE WITHOUT WEND');
+    // Skip to the line after the matching WEND
+    if (i + 1 < this._lines.length) {
+      this._nextLine = this._lines[i + 1];
+    } else {
+      throw { _basic: 'END' };
+    }
   }
 
   // ── Helper: split comma-separated args (respecting parens/strings) ────────

@@ -351,8 +351,12 @@ class C64Screen {
   // ── Public API — Graphics ─────────────────────────────────────────────────
 
   setGraphics(on) {
+    if (on && !this.graphicsMode) {
+      // Clear bitmap only when first entering graphics mode
+      this.pixels.fill(0);
+      this.pixelColor.fill(0);
+    }
     this.graphicsMode = on;
-    if (on) { this.pixels.fill(0); this.pixelColor.fill(0); }
   }
 
   pset(x, y, color) {
