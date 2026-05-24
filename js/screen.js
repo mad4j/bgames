@@ -111,7 +111,7 @@ class C64Screen {
     for (let code = 32; code < 128; code++) {
       tc.clearRect(0, 0, 8, 8);
       tc.fillStyle = '#fff';
-      tc.font = 'bold 9px "Courier New", monospace';
+      tc.font = '8px "Courier New", "Lucida Console", monospace';
       tc.textBaseline = 'top';
       tc.fillText(String.fromCharCode(code), 0, 0);
       this._glyphs[code] = tc.getImageData(0, 0, 8, 8);
